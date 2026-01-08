@@ -2,71 +2,132 @@
 
 ## Descripción
 
-Este proyecto está diseñado para **fines educativos** y demuestra el uso de Django como framework web con persistencia de datos.
+Este proyecto está diseñado para **fines educativos**. Su objetivo es servir como una base robusta y bien estructurada para aprender a desarrollar aplicaciones web con Django, poniendo especial énfasis en la persistencia de datos con una base de datos real (MySQL) y el uso de Docker para crear un entorno de desarrollo consistente.
+
+La estructura del proyecto sigue las mejores prácticas de la comunidad de Django, separando claramente la configuración del proyecto de la lógica de las aplicaciones.
 
 ## Características
 
 - Framework: Django 4.2.27
-- Base de datos: MySQL
-- Contenedorización con Docker
+- Base de datos: MySQL 8.0
+- Entorno de desarrollo: Contenedorizado con Docker y Docker Compose
 
-## Primer uso del proyecto
+---
 
-### Opción 1: Ejecución local
+## Creación del Proyecto (Desde Cero)
 
-1. **Crear un entorno virtual:**
-   ```bash
-   python -m venv venv
-   ```
+Para entender cómo se ha construido esta estructura, aquí están los comandos fundamentales que se ejecutaron.
 
-2. **Activar el entorno virtual:**
-   ```bash
-   source venv/bin/activate  # En Linux/Mac
-   # o
-   venv\Scripts\activate     # En Windows
-   ```
+1.  **Crear la estructura base del proyecto:**
+    El primer paso es usar el comando `django-admin` para crear el esqueleto del proyecto.
 
-3. **Instalar dependencias:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    # Este comando crea el directorio 'django_persistencia' con los ficheros de configuración.
+    django-admin startproject django_persistencia .
+    ```
+    *Nota: El `.` al final es importante. Le dice a Django que cree el proyecto en el directorio actual, evitando un nivel de anidamiento innecesario.*
 
-4. **Ejecutar migraciones:**
-   ```bash
-   python manage.py migrate
-   ```
+2.  **Crear la aplicación principal de trabajo:**
+    Un proyecto de Django se compone de una o más "apps". Las apps son módulos que encapsulan una funcionalidad específica.
 
-5. **Iniciar el servidor de desarrollo:**
-   ```bash
-   python manage.py runserver
-   ```
+    ```bash
+    # Desde el directorio raíz, junto a manage.py
+    python manage.py startapp app
+    ```
+    *Este comando crea el directorio `app/` con su propia estructura de archivos (`models.py`, `views.py`, etc.), que es donde los estudiantes desarrollarán la lógica de la aplicación.*
 
-6. **Acceder a la aplicación:**
-   - Abrir navegador en: http://127.0.0.1:8000
+---
 
-### Opción 2: Ejecución con Docker
+## Primer Uso del Proyecto
 
-1. **Construir y ejecutar los contenedores:**
-   ```bash
-   docker-compose up --build
-   ```
+### Opción Recomendada: Ejecución con Docker
 
-2. **Acceder a la aplicación:**
-   - Abrir navegador en: http://localhost:8000
+Este método es el más sencillo y fiable, ya que abstrae toda la configuración del entorno.
 
-## Estructura del proyecto
+1.  **Construir y ejecutar los contenedores:**
+    Este comando leerá el `docker-compose.yml`, construirá la imagen de Docker para el servidor de Django (si no existe) y arrancará los servicios de la aplicación y la base de datos.
 
-```
-├── django_persistencia/            # Configuración principal de Django
-├── app/                # Aplicación de ejemplo
-├── init_db/            # Scripts de inicialización de base de datos
-├── manage.py           # Comando principal de Django
-├── requirements.txt    # Dependencias del proyecto
-├── Dockerfile          # Configuración de contenedor
-└── docker-compose.yml  # Orquestación de servicios
-```
+    ```bash
+    docker-compose up --build
+    ```
 
-## Notas importantes
+2.  **Acceder a la aplicación:**
+    - Abrir el navegador en: http://localhost:8000
+    - El servidor se recargará automáticamente cada vez que se modifique un archivo del código.
 
-- Este proyecto es únicamente para aprendizaje y experimentación
-- Crear tu propio entorno virtual asegura un entorno de desarrollo limpio y aislado
+3.  **Para detener los servicios:**
+    - Presionar `Ctrl + C` en la terminal donde se ejecutó el `docker-compose`.
+    - Para eliminar los contenedores y el volumen de la base de datos: `docker-compose down -v`
+
+### Opción 2: Ejecución Local (Avanzado)
+
+Este método requiere tener Python y MySQL instalados y configurados en la máquina local.
+
+1.  **Crear y activar un entorno virtual:**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # En Linux/Mac
+    # venv\Scripts\activate   # En Windows
+    ```
+
+2.  **Instalar dependencias:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Ejecutar las migraciones:**
+    Este comando crea las tablas en la base de datos basándose en los modelos definidos.
+    ```bash
+    python manage.py migrate
+    ```
+
+4.  **Iniciar el servidor de desarrollo:**
+    ```bash
+    python manage.py runserver
+    ```
+
+---
+
+## Glosario de Archivos y Directorios
+
+Aquí tienes una explicación de los componentes clave de este proyecto, como si fuera una clase.
+
+### El Directorio Raíz
+
+| Archivo / Directorio       | Explicación                                                                                                                                                                                                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`manage.py`**            | **El "Control Remoto" de tu proyecto.** Es un script que te permite interactuar con tu proyecto Django desde la línea de comandos. Lo usarás para casi todo: arrancar el servidor (`runserver`), crear migraciones (`makemigrations`), aplicarlas (`migrate`), crear nuevas apps (`startapp`), etc. |
+| **`requirements.txt`**     | **La "Lista de Ingredientes".** Aquí se especifican todas las librerías de Python que el proyecto necesita para funcionar (como Django, `mysqlclient`, etc.). `pip install -r requirements.txt` lee este archivo e instala todo lo necesario.                                          |
+| **`Dockerfile`**           | **Las "Instrucciones de Montaje" para nuestro servidor.** Define una receta paso a paso para crear una imagen de contenedor. Instala Python, las dependencias del sistema y las librerías de Python. Es como automatizar la preparación de un ordenador desde cero.                   |
+| **`docker-compose.yml`**   | **El "Orquestador" de nuestros servicios.** Este archivo define y conecta los diferentes contenedores que necesita nuestra aplicación para funcionar. En nuestro caso, define dos servicios: `servidor` (nuestra app de Django) y `db` (la base de datos MySQL), y cómo se comunican entre ellos. |
+| **`init_db/`**             | Un directorio para scripts SQL que se ejecutan al crear la base de datos por primera vez. Útil para precargar datos iniciales.                                                                                                                                                          |
+| **`.gitignore`**           | **La "Lista de Cosas que Ignorar".** Le dice a Git qué archivos o directorios no debe incluir en el control de versiones (como entornos virtuales, archivos `.pyc`, la base de datos local, etc.).                                                                                          |
+
+### El Directorio de Configuración (`django_persistencia/`)
+
+Este directorio contiene los ajustes globales del proyecto. Su nombre coincide con el del proyecto para mayor claridad.
+
+| Archivo         | Explicación                                                                                                                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`settings.py`** | **El "Panel de Control" del proyecto.** Es el archivo más importante aquí. Define toda la configuración: la base de datos a usar, las apps instaladas (`INSTALLED_APPS`), la gestión de archivos estáticos, las zonas horarias y un largo etcétera. |
+| **`urls.py`**     | **El "Mapa de Rutas" principal.** Cuando un usuario visita una URL, Django consulta este archivo para ver qué vista de Python debe gestionar esa petición. Es el primer punto de entrada para el enrutamiento de URLs.           |
+| **`wsgi.py`**     | **El "Enlace" con los servidores web tradicionales.** Proporciona un estándar para que los servidores web (como Apache o Nginx) puedan ejecutar tu aplicación Django.                                                         |
+| **`asgi.py`**     | Similar a `wsgi.py`, pero para servidores web **asíncronos**. Permite funcionalidades más avanzadas como WebSockets.                                                                                                             |
+
+### El Directorio de la Aplicación (`app/`)
+
+| Archivo / Directorio | Explicación                                                                                                                                                                                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`models.py`**      | **Los "Planos" de tus datos.** Aquí se definen las tablas de la base de datos como si fueran clases de Python. Cada clase representa una tabla y cada atributo de la clase, una columna. Django se encarga de traducir esto a SQL. Es el corazón de la persistencia de datos. |
+| **`views.py`**       | **La "Lógica" detrás de cada petición.** Cuando una URL se asigna a una vista, la función o clase correspondiente en este archivo se ejecuta. Su trabajo es recibir la petición, interactuar con los modelos (si es necesario) y devolver una respuesta (normalmente, renderizando una plantilla HTML). |
+| **`admin.py`**       | **Configuración del "Panel de Administrador".** Django viene con un panel de administración listo para usar. En este archivo, registras tus modelos para que se puedan gestionar (crear, editar, borrar) fácilmente desde una interfaz web. |
+| **`tests.py`**       | **El "Control de Calidad".** Aquí se escriben las pruebas unitarias y de integración para asegurar que tu código funciona como se espera y que no se rompe nada al hacer cambios.                                                                                        |
+| **`migrations/`**    | **El "Historial de Cambios" de tu base de datos.** Cada vez que modificas `models.py` y ejecutas `makemigrations`, Django crea un archivo aquí que describe los cambios. `migrate` aplica esos cambios a la base de datos. ¡Nunca edites estos archivos manualmente! |
+
+---
+
+## Notas Importantes
+
+- Este proyecto es únicamente para aprendizaje y experimentación.
+- La separación entre `django_persistencia/` (configuración) y `app/` (lógica) es una práctica fundamental que este proyecto busca enseñar.
+- El uso de Docker simplifica enormemente el desarrollo y asegura que todos los alumnos trabajen en un entorno idéntico.
