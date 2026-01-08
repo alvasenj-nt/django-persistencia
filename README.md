@@ -57,12 +57,13 @@ Este proyecto está diseñado para **fines educativos** y demuestra el uso de Dj
 ## Estructura del proyecto
 
 ```
-├── app/                 # Configuración principal de Django
+├── django_persistencia/            # Configuración principal de Django
+├── app/                # Aplicación de ejemplo
 ├── init_db/            # Scripts de inicialización de base de datos
 ├── manage.py           # Comando principal de Django
 ├── requirements.txt    # Dependencias del proyecto
-├── Dockerfile         # Configuración de contenedor
-└── docker-compose.yml # Orquestación de servicios
+├── Dockerfile          # Configuración de contenedor
+└── docker-compose.yml  # Orquestación de servicios
 ```
 
 ## Notas importantes
