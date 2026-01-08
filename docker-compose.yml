@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  servidor:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=db_curso
+      - DB_USER=user_curso
+      - DB_PASSWORD=pass_curso
+      - DB_PORT=3306
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    platform: linux/x86_64
+    cap_add:
+      - SYS_NICE
+    volumes:
+      - ./init_db:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=db_curso
+      - MYSQL_USER=user_curso
+      - MYSQL_PASSWORD=pass_curso
+      - MYSQL_ROOT_PASSWORD=rootpass
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  mysql_data:
