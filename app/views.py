@@ -1,6 +1,8 @@
 from django.http import JsonResponse
-from .models import Pizza
+from .models import Pizza, Topping
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+import json
 
 @csrf_exempt
 def pizzas_view(request):
@@ -42,5 +44,45 @@ def pizzas_view(request):
                 'estado': pizza.get_estado_display(),
             }
         }, status=201)
+
+    return JsonResponse({'error': 'Método no soportado'}, status=405)
+
+@csrf_exempt
+def pizza_detail_view(request, pk):
+    pizza = get_object_or_404(Pizza, pk=pk)
+    
+    if request.method == 'GET':
+        data = {
+            'id': pizza.id,
+            'nombre': pizza.nombre,
+            'precio': str(pizza.precio),
+            'estado': pizza.get_estado_display(),
+            'toppings': list(pizza.toppings.all().values('id', 'nombre')),
+        }
+        return JsonResponse(data)
+
+    if request.method == 'PUT':
+        data = json.loads(request.body)
+        pizza.nombre = data.get('nombre', pizza.nombre)
+        pizza.precio = data.get('precio', pizza.precio)
+        pizza.estado = data.get('estado', pizza.estado)
+        
+        if 'toppings' in data:
+            pizza.toppings.set(data['toppings'])
+
+        pizza.save()
+        
+        data_response = {
+            'id': pizza.id,
+            'nombre': pizza.nombre,
+            'precio': str(pizza.precio),
+            'estado': pizza.get_estado_display(),
+            'toppings': list(pizza.toppings.all().values('id', 'nombre')),
+        }
+        return JsonResponse(data_response)
+
+    if request.method == 'DELETE':
+        pizza.delete()
+        return JsonResponse({}, status=204) # 204 = No Content
 
     return JsonResponse({'error': 'Método no soportado'}, status=405)
