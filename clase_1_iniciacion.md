@@ -7,53 +7,6 @@ es que nos sirvan de base para entender nuestro objetivo: **La persistencia en b
 
 ---
 
-## Preparando el Entorno (Instalación en Windows)
-
-Para poder seguir los ejercicios, necesitarás tener instalados Docker y Docker Compose. En Windows, la forma más sencilla y recomendada es instalar **Docker Desktop**.
-
-Docker Desktop es un paquete todo-en-uno que incluye:
-- El motor de Docker (Docker Engine).
-- La herramienta de línea de comandos `docker`.
-- La herramienta `docker-compose`.
-
-### Requisito Previo: WSL 2
-
-Docker Desktop para Windows utiliza el **Subsistema de Windows para Linux (WSL) 2** para funcionar de forma eficiente. WSL 2 es una tecnología de Microsoft que te permite ejecutar un entorno de Linux real directamente en Windows.
-
-**Paso 1: Instalar WSL**
-1. Abre una terminal de PowerShell o el Símbolo del sistema de Windows **como Administrador**.
-2. Ejecuta el siguiente comando. Este comando habilitará las características necesarias, descargará la última versión de Linux (normalmente Ubuntu) y la instalará por ti.
-   ```powershell
-   wsl --install
-   ```
-3. Reinicia tu ordenador cuando te lo pida para completar la instalación.
-
-### Paso 2: Instalar Docker Desktop
-
-1.  **Descarga:** Ve a la página oficial de Docker y descarga el instalador de Docker Desktop para Windows: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-2.  **Instala:** Ejecuta el instalador que has descargado (el fichero `.exe`). Sigue los pasos del asistente. Asegúrate de que la opción "Use WSL 2 instead of Hyper-V" esté marcada.
-3.  **Reinicia:** Es muy probable que Docker Desktop te pida reiniciar el sistema una vez más al finalizar la instalación.
-
-### Paso 3: Verificación
-
-Una vez reiniciado, Docker Desktop debería iniciarse automáticamente. Sabrás que está funcionando porque verás el icono de la ballena de Docker en tu barra de tareas.
-
-Para confirmar que todo está correcto, abre una nueva terminal (PowerShell o CMD) y ejecuta estos dos comandos:
-
-```bash
-docker --version
-```
-Debería devolverte la versión de Docker.
-
-```bash
-docker-compose --version
-```
-Debería devolverte la versión de Docker Compose.
-
-¡Si ambos comandos funcionan, tu entorno está listo!
-
----
-
 ## 1. El Servidor Web: La Pizzería de Internet
 
 Imagina que pedimos una pizza a domicilio. Todo ese proceso es muy similar a cómo funciona la web.
