@@ -1,30 +1,18 @@
-# Sesión 2: Modelos, Migraciones y Acceso a la Base de Datos
+# Sesión 2: Modelos y Persistencia - Análisis de un Proyecto Existente
 
-Vamos a crear la estructura de datos para nuestra pizzería directamente en Python, y veremos cómo Django, cual ingeniero experto, traduce nuestros "planos" (modelos) en tablas de una base de datos real.
+En esta sesión, actuaremos como nuevos desarrolladores que se unen a un proyecto de Django ya en marcha. En lugar de crear todo desde cero, nuestro objetivo es entender la estructura de datos existente, cómo ha evolucionado y cómo Django gestiona la coherencia entre el código y la base de datos.
 
 **Objetivos de hoy:**
-1.  Crear y relacionar modelos de datos con varios tipos de campo.
-2.  Entender el ciclo de vida de una migración para crear tablas.
-3.  Modificar un modelo existente y entender el ciclo de migración para alterar tablas.
-4.  Inspeccionar los cambios en la base de datos a bajo nivel.
+1.  Analizar los modelos de datos ya creados en el proyecto.
+2.  Entender el propósito del directorio de `migrations` como un "historial de cambios" de la base de datos.
+3.  Comprender por qué la base de datos se configura "mágicamente" de forma correcta al iniciar el proyecto.
+4.  Aplicar lo aprendido creando un nuevo modelo desde cero.
 
 ---
 
-## 0. Ejercicio Inicial: Construcción y Arranque del Entorno
-*(Este ejercicio asume que ya se ha ejecutado `docker-compose up --build -d` y los contenedores están corriendo).*
+## 1. Análisis de los "Planos": Los Modelos Existentes
 
----
-
-## 1. Ejercicio: Explorando la Base de Datos Vacía
-*(Este ejercicio asume que ya hemos entrado a la BD y comprobado que no existen las tablas de nuestra app).*
-
----
-
-## 2. Ejercicio: Creación de Modelos con Varios Tipos de Datos
-
-Ahora, vamos a definir nuestros modelos en `app/models.py` con la estructura final.
-
-**Acción:** Reemplaza el contenido de `app/models.py` con el siguiente código.
+Al explorar el proyecto, lo primero es abrir `app/models.py`. Este fichero es la **fuente de la verdad** sobre la estructura de datos de nuestra aplicación. En él, encontramos dos clases ya definidas:
 
 ```python
 from django.db import models
@@ -46,7 +34,7 @@ ESTADOS_PIZZA = [
 
 class Pizza(models.Model):
     nombre = models.CharField(max_length=100)
-    precio = models.DecimalField(max_digits=5, decimal_places=2)
+    precio = models.DecimalField(max_digits=10, decimal_places=2) # OJO: max_digits es 10
     fecha_fabricacion = models.DateField(auto_now_add=True)
     estado = models.CharField(
         max_length=3,
@@ -59,111 +47,79 @@ class Pizza(models.Model):
         return self.nombre
 ```
 
-**Explicación de los campos:**
-*   `DecimalField`: Ideal para precios.
-*   `DateField`: Guarda una fecha (`auto_now_add=True` la fija en la creación).
-*   `BooleanField`: Un simple campo de verdadero/falso.
-*   `choices`: En `Pizza`, hemos definido una constante `ESTADOS_PIZZA` (una lista de tuplas) y se la hemos pasado al campo `estado`. Django usará esto para mostrar un desplegable en su panel de administrador.
-
-> **Nota del profesor: ¿Qué es una relación `ManyToManyField`?**
->
-> Hemos usado `toppings = models.ManyToManyField(Topping)` en nuestro modelo `Pizza`. Este tipo de campo se usa cuando un registro de una tabla puede estar relacionado con muchos registros de otra, y viceversa.
->
-> - Una `Pizza` puede tener muchos `Topping`s.
-> - Un `Topping` (ej: queso) puede estar en muchas `Pizza`s.
->
-> Una base de datos relacional no puede guardar esta "lista" en una sola columna. Por ello, la única forma de representar esta relación es con una **tabla intermedia** (o tabla de unión).
->
-> La magia de Django es que, al usar `ManyToManyField`, él crea y gestiona esta tabla por nosotros. Contendrá, como mínimo, una clave foránea al `id` de la pizza y otra al `id` del topping. Por eso, cuando hagamos la migración, veremos aparecer una tabla extra que no hemos definido como modelo: `app_pizza_toppings`.
+**Conclusiones del análisis:**
+*   Tenemos dos entidades principales: `Topping` y `Pizza`.
+*   Se usan campos de varios tipos: `CharField` para texto, `BooleanField` para sí/no, `DecimalField` para precios (muy importante para evitar errores de redondeo) y `DateField` para fechas.
+*   **Relación Muitos-a-Muitos (`ManyToManyField`):** Una pizza puede tener muchos toppings y un topping puede estar en muchas pizzas. Django gestionará esto creando una tabla intermedia invisible para nosotros en el código, pero que existirá en la base de datos.
 
 ---
 
-## 3. Ejercicio: La Primera Migración (CREATE TABLE)
+## 2. El "Libro de Registro": El Historial en `app/migrations/`
 
-Con los modelos definidos, vamos a crear las tablas.
+El directorio `app/migrations/` contiene la historia de cómo nuestros modelos han evolucionado. Cada fichero es una "fotografía" de un cambio. En nuestro proyecto encontramos:
+*   `0001_initial.py`: Este fichero fue generado la primera vez que se ejecutó `python manage.py makemigrations`. Contiene las instrucciones para **crear** las tablas `Topping` y `Pizza` desde cero.
+*   `0002_alter_pizza_precio.py`: Este fichero se generó después de que un desarrollador modificara el modelo `Pizza` (originalmente, el campo `precio` tenía `max_digits=5`). Contiene la instrucción para **alterar** la tabla existente y cambiar la definición de la columna `precio`.
 
-### 3.1. Crear el fichero de migración
-
-Entra al contenedor de la aplicación (`docker-compose exec servidor bash`) y ejecuta:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py makemigrations app
-```
-Django creará el fichero `app/migrations/0001_initial.py`. Sal del contenedor.
-
-### 3.2. Revisar el SQL generado
-
-Entra de nuevo al contenedor y ejecuta:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py sqlmigrate app 0001
-```
-Verás las sentencias `CREATE TABLE` que se van a ejecutar. Sal del contenedor.
-
-### 3.3. Aplicar la migración
-
-Entra al contenedor por última vez en este ejercicio y ejecuta:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py migrate
-```
-Sal del contenedor.
-
-### 3.4. Verificar en la Base de Datos
-
-Accede al cliente de MySQL como en el Ejercicio 1 y usa `SHOW TABLES;`. Verás las nuevas tablas. Luego, usa `DESCRIBE app_pizza;` para ver que todas las columnas se han creado como esperábamos.
+Estos ficheros son la clave para que cualquier miembro del equipo pueda reconstruir la estructura de la base de datos de forma idéntica.
 
 ---
 
-## 4. Ejercicio: Modificando un Modelo Existente
+## 3. La "Magia": ¿Cómo se Construye la Base de Datos?
 
-El software evoluciona. Supongamos que nuestras pizzas pueden llegar a ser muy caras y necesitamos más dígitos para el precio.
-
-### 4.1. Modificar el campo `precio`
-
-**Acción:** Modifica `app/models.py` para que la línea del campo `precio` en el modelo `Pizza` quede así:
-
-```python
-# ... (dentro de la clase Pizza)
-    precio = models.DecimalField(max_digits=10, decimal_places=2) # Cambiamos max_digits de 5 a 10
-# ...
+Cuando un nuevo desarrollador clona este repositorio y ejecuta `docker-compose up`, ocurre algo fundamental, definido en el fichero `docker-compose.yml`:
+```yaml
+command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 ```
+El comando `python manage.py migrate` se ejecuta **automáticamente** cada vez que arranca el servidor. ¿Qué hace `migrate`?
+
+1.  Se conecta a la base de datos.
+2.  Comprueba una tabla especial (`django_migrations`) para ver qué migraciones de los ficheros se han aplicado ya.
+3.  Si encuentra ficheros de migración en `app/migrations/` que no están en esa tabla, los ejecuta en orden.
+
+Para un desarrollador nuevo, ninguna migración estará aplicada. Por tanto, Django ejecutará `0001_initial.py` (creando las tablas) y luego `0002_alter_pizza_precio.py` (modificando el campo precio).
+
+**El resultado final es que, con solo levantar los contenedores, la base de datos queda perfectamente sincronizada con el estado actual de los modelos, incluyendo toda su historia de cambios.**
 
 ---
 
-## 5. Ejercicio: La Segunda Migración (ALTER TABLE)
+## 4. Ejercicio Interactivo: ¡Tu Turno! Creando un Modelo Desde Cero
 
-Ahora, aplicaremos el cambio realizado en el modelo.
+Ahora que hemos analizado un proyecto existente, es vuestro turno de hacerlo evolucionar.
 
-### 5.1. Crear la migración de modificación
+**Escenario:** Nuestra pizzería necesita llevar un registro de sus **proveedores** de ingredientes.
 
-Entra al contenedor (`docker-compose exec servidor bash`) y ejecuta:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py makemigrations app
-```
-Django detectará el cambio en el campo `precio` y creará un nuevo fichero, ej: `0002_alter_pizza_precio.py`. Sal del contenedor.
+**Vuestro objetivo:** Definir el modelo `Proveedor`, crear su migración y aplicarla.
 
-### 5.2. Revisar el SQL de la modificación
+### 4.1. Diseña el modelo
 
-Entra de nuevo al contenedor y revisa el SQL para la nueva migración:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py sqlmigrate app 0002
-```
-Esta vez, el resultado debería ser una sentencia `ALTER TABLE ... MODIFY COLUMN ...` para el campo `precio`. Sal del contenedor.
+Abre `app/models.py` y piensa en cómo definiríais la clase `Proveedor`. Aquí tenéis algunas pistas sobre la información que necesitamos guardar:
 
-### 5.3. Aplicar la nueva migración
+*   **Nombre:** El nombre del proveedor (ej: "Harinas del Sur S.L.").
+    *   *Pista: ¿Qué tipo de campo es ideal para texto con una longitud máxima?*
+*   **Email de contacto:** Necesitamos un campo para el email que, además, valide que el formato es correcto.
+    *   *Pista: Django tiene un campo específico para emails.*
+    *   *Reto extra: ¿Cómo te asegurarías de que no haya dos proveedores con el mismo email?*
+*   **Teléfono:** Un campo de texto simple para el número de teléfono. Este campo no siempre es obligatorio.
+    *   *Pista: ¿Cómo le dirías a Django que este campo puede dejarse en blanco en un formulario?*
+*   **Fecha de alta:** Queremos registrar automáticamente la fecha en la que añadimos el proveedor al sistema.
+    *   *Pista: Ya hemos hecho esto en el modelo `Pizza`.*
 
-Entra por última vez al contenedor y aplica la migración:
-```bash
-# Dentro del contenedor 'servidor':
-python manage.py migrate
-```
-Sal del contenedor.
+Escribe la clase completa del modelo `Proveedor` al final de `app/models.py`.
 
-### 5.4. Verificación Final
+### 4.2. Genera y aplica la migración
 
-Accede a MySQL y ejecuta `DESCRIBE app_pizza;`. Comprueba que el tipo de la columna `precio` ha cambiado para reflejar los nuevos `max_digits` (ej. `decimal(10,2)`).
+Una vez que tengáis el modelo definido en el código, ¿cuáles son los dos pasos (comandos) que debéis ejecutar para que Django cree la tabla en la base de datos?
 
----
+1.  El comando para que Django **detecte los cambios** en `models.py` y cree el fichero de migración.
+2.  El comando para que Django **aplique esa migración** a la base de datos.
+
+Ejecutadlos en orden desde dentro del contenedor `servidor`.
+
+### 4.3. (Bonus) Haz visible el modelo en el Panel de Administrador
+
+Si has completado los pasos anteriores, la tabla `app_proveedor` ya existe en la base de datos, pero no puedes gestionarla desde el panel de administrador.
+
+*   ¿Qué fichero tienes que modificar para que un modelo aparezca en el admin?
+*   ¿Qué necesitas importar y qué línea de código tienes que añadir?
+
+¡Inténtalo! Si lo consigues, podrás crear, ver y editar proveedores desde la interfaz web de Django.
