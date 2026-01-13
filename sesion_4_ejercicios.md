@@ -1,202 +1,134 @@
-# Sesión 4: Vistas de Edición y Borrado (API con Django Puro)
+# Sesión 4: Vistas de Detalle, Edición y Borrado (API)
 
-En la sesión anterior construimos los endpoints para leer la lista de pizzas y para crear nuevas. Hoy completaremos el ciclo CRUD (Create, Read, Update, Delete) aprendiendo a interactuar con un recurso específico a través de su ID.
+En la sesión anterior analizamos un endpoint que gestionaba una **colección** de recursos (`/pizzas/`). Hoy completaremos el ciclo CRUD (Create, Read, Update, Delete) estudiando cómo interactuar con un **recurso específico** a través de su ID, como ver, modificar o borrar una pizza concreta.
 
 **Objetivos de hoy:**
-1.  Crear vistas que operen sobre un único objeto de la base de datos.
-2.  Capturar parámetros desde la URL (ej: el `id` de una pizza).
-3.  Manejar los métodos `GET` (detalle), `PUT` (actualización) y `DELETE` (borrado).
-4.  Leer y procesar un cuerpo de petición en formato JSON.
-5.  Usar `cURL` para probar estos nuevos endpoints.
+1.  Analizar cómo se captura un parámetro dinámico desde una URL (ej: `/pizzas/1/`).
+2.  Entender cómo una sola vista puede manejar `GET` (detalle), `PUT` (actualización) y `DELETE` (borrado).
+3.  Aprender a procesar un cuerpo de petición en formato JSON para las actualizaciones.
+4.  Aplicar lo aprendido para construir un nuevo endpoint de detalle desde cero.
 
 ---
 
-## 1. Ejercicio: Endpoint de Detalle y Actualización (`/pizzas/<id>/`)
+## 1. Análisis del Endpoint de Detalle (`/pizzas/<id>/`)
 
-Crearemos una única vista que se comportará de forma diferente según el método HTTP que reciba.
+En el proyecto ya existe un endpoint que permite operar sobre una pizza específica. Vamos a analizar su construcción.
 
-### 1.1. Creando la Nueva URL y Vista
+### 1.1. La URL Dinámica con Parámetros
 
-Primero, definimos la ruta. Django tiene una forma elegante de capturar partes de la URL como variables.
-
-**Acción:** Añade la nueva ruta a `app/urls.py`.
-
+El primer paso es la ruta. En `app/urls.py`, se ha añadido una nueva línea:
 ```python
 # en app/urls.py
-from django.urls import path
-from . import views
-
+# ...
 urlpatterns = [
     path('pizzas/', views.pizzas_view, name='pizzas_view'),
-    path('pizzas/<int:pk>/', views.pizza_detail_view, name='pizza_detail_view'), # ¡Línea nueva!
+    path('pizzas/<int:pk>/', views.pizza_detail_view, name='pizza_detail_view'), # ¡Línea Analizada!
 ]
 ```
-**Explicación:** `<int:pk>` le dice a Django que espere un número entero en esta parte de la URL y que lo pase a la vista como un argumento llamado `pk` (abreviatura de *Primary Key*, una convención común).
+**Análisis:**
+-   `<int:pk>`: Esta es la sintaxis de Django para capturar un fragmento de la URL. Significa:
+    -   `int`: Espera que esta parte sea un número entero.
+    -   `pk`: El nombre que le damos a esa variable. Se pasará como un argumento con ese nombre a la vista (`def pizza_detail_view(request, pk):`).
+-   `pk` es la abreviatura estándar de *Primary Key* (Clave Primaria), el identificador único de un registro en la base de datos.
 
-Ahora, creemos el esqueleto de la vista en `app/views.py`.
+### 1.2. La Vista "Todo en Uno": `pizza_detail_view`
 
-**Acción:** Añade esta nueva función al final de `app/views.py`.
+Esta única función en `app/views.py` contiene toda la lógica para gestionar una pizza individual.
 
 ```python
-# al final de app/views.py
-from django.shortcuts import get_object_or_404 # ¡Nueva importación!
+# en app/views.py
+from django.shortcuts import get_object_or_404 # ¡Importante!
+# ... otras importaciones
 
 @csrf_exempt
 def pizza_detail_view(request, pk):
-    # Usaremos esta función para GET, PUT y DELETE
-    # Primero, obtenemos la pizza o devolvemos un 404 si no existe
-    pizza = get_object_or_404(Pizza, pk=pk)
-    
-    return JsonResponse({'error': 'Método no soportado aún'}, status=405)
-```
-**Explicación:**
-- `get_object_or_404`: Es un atajo de Django que intenta obtener un objeto. Si no lo encuentra, automáticamente devuelve un error 404 (Not Found), ahorrándonos escribir un `try...except`.
-- `pk`: Es el argumento que recibe el valor de la URL.
-
-### 1.2. Implementando la Lectura de un solo objeto (`GET`)
-
-**Acción:** Modifica `pizza_detail_view` para que maneje peticiones `GET`.
-
-```python
-# Reemplaza pizza_detail_view con esta versión
-@csrf_exempt
-def pizza_detail_view(request, pk):
+    # 1. Obtener el objeto es el primer paso, común a todos los métodos.
     pizza = get_object_or_404(Pizza, pk=pk)
     
     if request.method == 'GET':
+        # 2. Lógica de Lectura (Detalle)
         data = {
-            'id': pizza.id,
-            'nombre': pizza.nombre,
-            'precio': str(pizza.precio),
-            'estado': pizza.get_estado_display(),
-            'toppings': list(pizza.toppings.all().values('id', 'nombre')),
-        }
-        return JsonResponse(data)
-    
-    return JsonResponse({'error': 'Método no soportado aún'}, status=405)
-```
-**Explicación:**
-- `pizza.toppings.all().values(...)`: Para el campo `ManyToManyField`, obtenemos todos los toppings relacionados y con `.values()` los convertimos en una lista de diccionarios, que es compatible con JSON.
-
-### 1.3. Probar el Detalle con `cURL`
-
-Suponiendo que la pizza "Margarita" que creaste tiene `id=1`:
-```bash
-curl http://localhost:8000/pizzas/1/
-```
-**Resultado esperado:** Deberías ver el JSON con los datos de esa única pizza, incluyendo sus toppings.
-
----
-
-## 2. Ejercicio: Actualización (`PUT`) y Borrado (`DELETE`)
-
-### 2.1. Implementando la Actualización (`PUT`)
-
-Usaremos `PUT` para actualizar el objeto completo. Para ello, necesitamos leer el cuerpo de la petición, que esta vez enviaremos en formato JSON.
-
-**Acción:** Añade el bloque para `PUT` a `pizza_detail_view`.
-
-```python
-# Reemplaza pizza_detail_view con esta versión final
-@csrf_exempt
-def pizza_detail_view(request, pk):
-    pizza = get_object_or_404(Pizza, pk=pk)
-    
-    if request.method == 'GET':
-        # ... (código del GET sin cambios)
-        data = {
-            'id': pizza.id,
-            'nombre': pizza.nombre,
-            'precio': str(pizza.precio),
+            'id': pizza.id, 'nombre': pizza.nombre, 'precio': str(pizza.precio),
             'estado': pizza.get_estado_display(),
             'toppings': list(pizza.toppings.all().values('id', 'nombre')),
         }
         return JsonResponse(data)
 
     if request.method == 'PUT':
+        # 3. Lógica de Actualización
         data = json.loads(request.body)
         pizza.nombre = data.get('nombre', pizza.nombre)
         pizza.precio = data.get('precio', pizza.precio)
         pizza.estado = data.get('estado', pizza.estado)
         
-        # Para actualizar toppings, usamos .set()
         if 'toppings' in data:
             pizza.toppings.set(data['toppings'])
 
         pizza.save()
-        
-        # Devolvemos los datos actualizados
-        # (reutilizamos el código de la lógica GET)
-        data_response = {
-            'id': pizza.id,
-            'nombre': pizza.nombre,
-            'precio': str(pizza.precio),
-            'estado': pizza.get_estado_display(),
-            'toppings': list(pizza.toppings.all().values('id', 'nombre')),
-        }
-        return JsonResponse(data_response)
-    
-    return JsonResponse({'error': 'Método no soportado aún'}, status=405)
-```
-**Explicación:**
-- `json.loads(request.body)`: Así es como leemos un cuerpo de petición que viene en formato JSON.
-- `data.get('nombre', pizza.nombre)`: Usamos `.get()` con un valor por defecto para permitir actualizaciones parciales (si un campo no viene en el JSON, mantenemos su valor actual).
-- `pizza.save()`: El ORM es lo suficientemente inteligente como para saber que, si el objeto ya tiene un `pk`, debe hacer un `UPDATE` en lugar de un `INSERT`.
-
-### 2.2. Probar la Actualización con `cURL`
-
-Vamos a cambiar el nombre y el precio de nuestra pizza con `id=1`.
-```bash
-curl -X PUT -H "Content-Type: application/json" -d '{"nombre": "Margarita Especial", "precio": "10.50"}' http://localhost:8000/pizzas/1/
-```
-**Desglose:**
-- `-X PUT`: Especifica el método PUT.
-- `-H "Content-Type: application/json"`: ¡Muy importante! Le dice a Django que el cuerpo de la petición es JSON.
-- `-d '{...}'`: El cuerpo de la petición, esta vez como un string JSON.
-
-**Verificación:** Vuelve a hacer `curl http://localhost:8000/pizzas/1/` y verás los datos actualizados.
-
-### 2.3. Implementando el Borrado (`DELETE`)
-
-**Acción:** Completa la vista `pizza_detail_view` con la lógica de `DELETE`.
-
-```python
-# Esta es la versión final final de la vista
-@csrf_exempt
-def pizza_detail_view(request, pk):
-    pizza = get_object_or_404(Pizza, pk=pk)
-    
-    if request.method == 'GET':
-        # ... (sin cambios)
-        # ...
-        return JsonResponse(data)
-
-    if request.method == 'PUT':
-        # ... (sin cambios)
-        # ...
-        return JsonResponse(data_response)
+        # Se devuelve el objeto actualizado
+        return JsonResponse({'id': pizza.id, 'nombre': pizza.nombre, 'precio': str(pizza.precio)})
 
     if request.method == 'DELETE':
+        # 4. Lógica de Borrado
         pizza.delete()
-        return JsonResponse({}, status=204) # 204 = No Content
+        return JsonResponse({}, status=204)
 
     return JsonResponse({'error': 'Método no soportado'}, status=405)
 ```
-**Explicación:**
-- `pizza.delete()`: El ORM se encarga de borrar el registro de la tabla.
-- `status=204`: Es el código de estado estándar para una respuesta exitosa que no devuelve contenido en el cuerpo.
 
-### 2.4. Probar el Borrado con `cURL`
+**Análisis detallado:**
+1.  **`get_object_or_404(Pizza, pk=pk)`**: Este es el método más idiomático para obtener un objeto. Intenta hacer `Pizza.objects.get(pk=pk)`. Si no lo encuentra, en lugar de lanzar un error que pararía el programa, Django devuelve automáticamente una respuesta `404 Not Found`.
+2.  **Lógica `GET`**: Similar a la vista de lista, pero solo serializamos el único objeto `pizza` que hemos obtenido. Para el campo `ManyToManyField`, `.toppings.all()` nos da los objetos Topping relacionados.
+3.  **Lógica `PUT`**:
+    -   `json.loads(request.body)`: A diferencia de `request.POST` (que lee datos de formulario), `request.body` contiene el cuerpo de la petición en bruto. Si el cliente nos envía JSON, debemos procesarlo con la librería `json`.
+    -   `data.get('nombre', pizza.nombre)`: Usamos `.get()` con el valor actual del objeto como valor por defecto. Esto nos permite hacer actualizaciones parciales (a veces llamado `PATCH`).
+    -   `pizza.save()`: Como el objeto `pizza` fue obtenido de la base de datos (ya tiene un `pk`), Django es lo suficientemente inteligente para saber que `save()` debe ejecutar un `UPDATE` en la base de datos, no un `INSERT`.
+4.  **Lógica `DELETE`**:
+    -   `pizza.delete()`: El ORM proporciona este método simple para eliminar el registro de la base de datos.
+    -   `status=204`: Es el código de estado HTTP estándar para "No Content". Indica que la operación fue exitosa, pero no hay nada que devolver en el cuerpo de la respuesta.
 
-```bash
-curl -X DELETE http://localhost:8000/pizzas/1/
-```
-**Verificación Final:**
-Haz una última petición `GET` a la lista completa:
-```bash
-curl http://localhost:8000/pizzas/
-```
-La lista de pizzas debería volver a estar vacía.
+### 1.3. Verificación con cURL
+
+Podemos probar los 3 métodos en el endpoint que ya existe:
+-   **Obtener detalle (GET):**
+    ```bash
+    curl http://localhost:8000/pizzas/1/
+    ```
+-   **Actualizar (PUT):**
+    ```bash
+    curl -X PUT -H "Content-Type: application/json" -d '{"nombre": "Margarita Clásica"}' http://localhost:8000/pizzas/1/
+    ```
+-   **Borrar (DELETE):**
+    ```bash
+    curl -X DELETE http://localhost:8000/pizzas/1/
+    ```
 
 ---
-¡Felicidades! Has completado un ciclo CRUD completo para una API RESTful usando solo las herramientas principales de Django.
+
+## 2. Ejercicio Práctico: API de Detalle para Toppings
+
+¡Tu turno! Ahora que has analizado el ciclo completo para una Pizza, tu misión es construir el endpoint de detalle para los `Toppings`, que vivirá en `/toppings/<id>/`.
+
+**Vuestro objetivo:** Crear una vista `topping_detail_view` que maneje peticiones `GET`, `PUT` y `DELETE` para un topping específico.
+
+### 2.1. Define la ruta
+
+En `app/urls.py`, ¿qué nueva línea de `path` necesitas añadir para capturar la URL de detalle de un topping y dirigirla a una nueva vista `topping_detail_view`?
+
+### 2.2. Construye la vista de detalle
+
+En `app/views.py`, crea la función `topping_detail_view`. Hazte las siguientes preguntas para guiarte:
+
+1.  ¿Qué argumentos debe recibir la función, además de `request`?
+2.  ¿Cuál es la primera llamada que deberías hacer para obtener el objeto `Topping` o devolver un 404 si no existe?
+3.  **Para la lógica `GET`**, ¿cómo serializarías un único objeto `Topping` a JSON?
+4.  **Para la lógica `PUT`**, ¿cómo leerías los datos `JSON` del `request.body`? ¿Y cómo actualizarías los campos del objeto `Topping` antes de guardarlo?
+5.  **Para la lógica `DELETE`**, ¿qué método del objeto `topping` deberías llamar y qué código de estado HTTP deberías devolver?
+
+### 2.3. ¡Pruébalo!
+
+Finalmente, escribe y ejecuta tus propios comandos de `cURL` para:
+1.  Ver el detalle de un topping específico con `GET`.
+2.  Actualizar el nombre de ese topping con `PUT`.
+3.  Borrar ese topping de la base de datos con `DELETE`.
+4.  Verificar con un `GET` a `/toppings/` que el topping ya no está en la lista.
