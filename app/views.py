@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from .models import Pizza, Topping
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 import json
 
 @csrf_exempt
@@ -86,3 +86,6 @@ def pizza_detail_view(request, pk):
         return JsonResponse({}, status=204) # 204 = No Content
 
     return JsonResponse({'error': 'Método no soportado'}, status=405)
+
+def frontend_view(request):
+    return render(request, 'app/pizzas.html')
