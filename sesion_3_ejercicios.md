@@ -1,91 +1,28 @@
-# Sesión 3: Vistas de Lectura y Creación (API con Django Puro)
+# Sesión 3: Vistas y Serialización (API con Django Puro)
 
-Hoy crearemos vistas que actúen como una API, comunicándose mediante JSON. Aprenderemos a leer datos de la base de datos y a crear nuevos registros a través de peticiones HTTP directas.
+En esta sesión analizaremos cómo se ha construido una "API" (Interfaz de Programación de Aplicaciones) para interactuar con nuestros modelos a través de HTTP. En lugar de páginas HTML, nuestras vistas devolverán datos en formato JSON, el lenguaje universal de la web moderna.
 
 **Objetivos de hoy:**
-1.  Crear vistas que devuelvan respuestas en formato JSON con `JsonResponse`.
-2.  Manejar diferentes métodos HTTP (`GET`, `POST`) en una misma vista.
-3.  Convertir manualmente un QuerySet de Django a una estructura de datos serializable (lista de diccionarios).
-4.  Crear nuevos objetos en la base de datos a partir de datos recibidos en una petición.
-5.  Usar `cURL` para probar nuestros endpoints de API.
+1.  Analizar cómo se estructura un endpoint de API que maneja `GET` y `POST`.
+2.  Entender el proceso de "serialización": convertir un objeto de Django en JSON.
+3.  Comprender cómo gestionar la seguridad (CSRF) en una API.
+4.  Aplicar lo aprendido para crear un nuevo endpoint de API desde cero.
 
 ---
 
-## 1. Ejercicio: Endpoint de Lista de Pizzas (`GET /pizzas/`)
+## 1. Análisis del Endpoint `/pizzas/`
 
-Nuestro primer objetivo es crear una URL (`/pizzas/`) que, al ser consultada con el método `GET`, devuelva una lista de todas las pizzas en nuestra base de datos en formato JSON.
+En el proyecto ya existe un endpoint funcional en la URL `/pizzas/`. Vamos a diseccionar cómo está construido.
 
-### 1.1. Organizando las URLs de la App
+### 1.1. La Arquitectura: De la URL a la Vista
 
-Es una buena práctica que cada app gestione sus propias URLs. Crearemos un fichero `urls.py` dentro de nuestra `app`.
+El flujo de una petición en Django sigue un camino claro:
 
-**Acción:** Crea el fichero `app/urls.py` con el siguiente contenido.
+**1. El enrutador principal (`django_persistencia/urls.py`):**
+Este fichero delega el control a nuestra aplicación. La línea `path('', include('app.urls'))` le dice a Django: "para cualquier URL, busca las reglas en el fichero `urls.py` de la aplicación `app`".
 
-```python
-# en app/urls.py
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    # De momento lo dejamos vacío
-]
-```
-
-### 1.2. Incluyendo las URLs de la App en el Proyecto
-
-Ahora, le decimos al proyecto principal que tenga en cuenta las URLs de nuestra `app`.
-
-**Acción:** Modifica el fichero `django_persistencia/urls.py` para que quede así.
-
-```python
-# en django_persistencia/urls.py
-from django.contrib import admin
-from django.urls import path, include # Asegúrate de importar 'include'
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('app.urls')), # ¡Línea nueva!
-]
-```
-Esto le dice a Django: "para cualquier URL que no sea `/admin/`, ve a buscar las reglas en `app.urls`".
-
-### 1.3. Creando la Vista de Lista
-
-Ahora, la lógica principal.
-
-**Acción:** Reemplaza el contenido de `app/views.py` con esto:
-
-```python
-# en app/views.py
-from django.http import JsonResponse
-from .models import Pizza
-
-def pizzas_view(request):
-    if request.method == 'GET':
-        pizzas = Pizza.objects.all()
-        # Convertimos el QuerySet a una lista de diccionarios
-        data = []
-        for pizza in pizzas:
-            data.append({
-                'id': pizza.id,
-                'nombre': pizza.nombre,
-                'precio': str(pizza.precio), # Convertimos Decimal a string
-                'estado': pizza.get_estado_display(), # Usamos un método útil de Django
-            })
-        return JsonResponse({'pizzas': data})
-    
-    # Dejaremos espacio para el POST más adelante
-    return JsonResponse({'error': 'Método no soportado'}, status=405)
-```
-**Explicación:**
-- Importamos `JsonResponse`, que convierte diccionarios de Python a JSON.
-- `Pizza.objects.all()`: Es el comando del ORM que dice "dame todos los registros de la tabla Pizza".
-- `get_estado_display()`: Como `estado` es un campo con `choices`, Django nos regala este método para obtener el texto legible (ej: "Disponible") en lugar del valor guardado en la BD (ej: "DIS").
-
-### 1.4. Conectando URL y Vista
-
-**Acción:** Vuelve a `app/urls.py` y modifícalo para que conecte la URL `/pizzas/` con la vista que acabamos de crear.
-
+**2. El enrutador de la app (`app/urls.py`):**
+Aquí se define la ruta específica de nuestro endpoint.
 ```python
 # en app/urls.py
 from django.urls import path
@@ -95,42 +32,23 @@ urlpatterns = [
     path('pizzas/', views.pizzas_view, name='pizzas_view'),
 ]
 ```
+Esta línea conecta la URL `/pizzas/` con la función `pizzas_view` que se encuentra en `app/views.py`.
 
-### 1.5. Probar con `cURL`
+### 1.2. El Corazón de la Lógica: `app/views.py`
 
-Abre una **nueva terminal** (no la de `runserver`) y ejecuta:
-```bash
-curl http://localhost:8000/pizzas/
-```
-**Resultado esperado:** Deberías ver una respuesta JSON con una lista vacía, porque aún no hemos creado ninguna pizza.
-```json
-{"pizzas": []}
-```
-
----
-
-## 2. Ejercicio: Endpoint de Creación de Pizzas (`POST /pizzas/`)
-
-Ahora, vamos a añadir la lógica para que el mismo endpoint `/pizzas/` pueda crear una pizza nueva cuando reciba una petición `POST`.
-
-### 2.1. Modificar la Vista para Aceptar `POST`
-
-> **Nota del profesor: ¡Cuidado con el error 403 (CSRF)!**
->
-> Al hacer una petición `POST` a una vista de Django desde una herramienta externa como `cURL`, es casi seguro que te encuentres con un error `403 Forbidden` por un fallo de verificación `CSRF`. Es una medida de seguridad vital de Django. Como nuestra vista es una API y no un formulario web tradicional, debemos indicarle a Django que la exima de esta verificación. Lo hacemos con el decorador `@csrf_exempt`.
-
-**Acción:** Modifica de nuevo `app/views.py` para añadir la lógica `POST` y el decorador.
+Aquí es donde ocurre toda la magia. Este es el código completo que da vida a nuestro endpoint:
 
 ```python
 # en app/views.py
 from django.http import JsonResponse
-from .models import Pizza, Topping # Importamos Topping
-from django.views.decorators.csrf import csrf_exempt # ¡Importante!
+from .models import Pizza, Topping
+from django.views.decorators.csrf import csrf_exempt
 import json
 
-@csrf_exempt # ¡Importante!
+@csrf_exempt
 def pizzas_view(request):
     if request.method == 'GET':
+        # Lógica para obtener la lista de pizzas
         pizzas = Pizza.objects.all()
         data = []
         for pizza in pizzas:
@@ -143,8 +61,7 @@ def pizzas_view(request):
         return JsonResponse({'pizzas': data})
 
     if request.method == 'POST':
-        # Creamos una pizza con los datos del POST
-        # Ojo: esto es una simplificación, no hay validación de datos
+        # Lógica para crear una nueva pizza
         nombre = request.POST.get('nombre')
         precio = request.POST.get('precio')
         
@@ -153,62 +70,77 @@ def pizzas_view(request):
 
         pizza = Pizza.objects.create(nombre=nombre, precio=precio)
         
-        # Gestionar la relación ManyToMany para los toppings
         topping_ids = request.POST.getlist('toppings')
         if topping_ids:
             pizza.toppings.set(topping_ids)
         
-        # Devolvemos la pizza creada
         return JsonResponse({
             'message': 'Pizza creada con éxito',
-            'pizza': {
-                'id': pizza.id,
-                'nombre': pizza.nombre,
-                'precio': str(pizza.precio),
-                'estado': pizza.get_estado_display(),
-            }
+            'pizza': { 'id': pizza.id, 'nombre': pizza.nombre, 'precio': str(pizza.precio) }
         }, status=201)
 
     return JsonResponse({'error': 'Método no soportado'}, status=405)
 ```
-**Explicación Clave:**
-- `request.POST`: Es un diccionario que contiene los datos enviados en el cuerpo de una petición POST con formato `form-urlencoded`.
-- `Pizza.objects.create()`: Un atajo del ORM para crear y guardar un nuevo objeto en un solo paso.
-- `request.POST.getlist('toppings')`: `getlist` es crucial para campos que pueden tener múltiples valores, como es nuestro caso al seleccionar varios toppings.
-- `pizza.toppings.set(topping_ids)`: Esta es la forma de establecer las relaciones muchos a muchos. Le pasamos una lista de IDs de `Topping` y Django crea las relaciones en la tabla intermedia.
 
-### 2.2. Probar la Creación con `cURL`
+**Análisis detallado:**
+-   **`@csrf_exempt`**: Este "decorador" es crucial. Django tiene una protección de seguridad llamada CSRF para evitar ataques a través de formularios web. Como nuestra API no usa formularios, debemos indicarle explícitamente que no realice esta comprobación. Sin esto, cualquier petición `POST` fallaría con un error 403.
+-   **`if request.method == 'GET':`**: Esta es la forma de separar la lógica para peticiones de lectura.
+    -   `Pizza.objects.all()`: Se utiliza el ORM para obtener todos los objetos `Pizza`.
+    -   **Serialización manual:** El bucle `for` convierte cada objeto `pizza` (que Python no sabe cómo hacer JSON) en un diccionario, que es una estructura que sí se puede traducir fácilmente. Este proceso se llama **serialización**.
+    -   `JsonResponse`: Es una clase especial de Django que se encarga de convertir el diccionario de Python en una respuesta HTTP con el `Content-Type` correcto (`application/json`).
+-   **`if request.method == 'POST':`**: Aquí se gestiona la creación de nuevos recursos.
+    -   `request.POST.get('nombre')`: Se extraen los datos enviados en el cuerpo de la petición.
+    -   `Pizza.objects.create(...)`: El ORM se encarga de crear el nuevo registro en la base de datos de forma segura.
+    -   `pizza.toppings.set(...)`: Así se gestiona una relación `ManyToManyField`. Le pasamos una lista de IDs de los toppings y Django se encarga de crear las relaciones en la tabla intermedia.
+    -   `status=201`: Es una buena práctica de las APIs devolver el código de estado `201 Created` para indicar que un recurso se ha creado con éxito.
 
-Para esto, primero necesitamos crear algunos toppings. Lo haremos desde el "shell" de Django, una herramienta muy útil.
+### 1.3. Verificación con cURL
 
-1.  **Crear Toppings:**
-    Entra al contenedor (`docker-compose exec servidor bash`) y ejecuta `python manage.py shell`. Una vez dentro del shell de Django:
-    ```python
-    from app.models import Topping
-    Topping.objects.create(nombre='Queso', es_vegetariano=True)
-    Topping.objects.create(nombre='Tomate', es_vegetariano=True)
-    Topping.objects.create(nombre='Jamon', es_vegetariano=False)
-    exit()
-    ```
-    Y sal del contenedor (`exit`). Ahora tenemos toppings con IDs 1, 2 y 3.
+Podemos usar la herramienta de línea de comandos `cURL` para interactuar con nuestra API ya funcional.
 
-2.  **Lanzar la petición `POST`:**
-    Ahora sí, desde una terminal normal, creamos nuestra primera pizza.
+1.  **Probar `GET`:**
     ```bash
-    curl -X POST -d "nombre=Margarita&precio=9.99&toppings=1&toppings=2" http://localhost:8000/pizzas/
+    curl http://localhost:8000/pizzas/
     ```
-    **Desglose:**
-    - `-X POST`: Especifica que el método es POST.
-    - `-d "..."`: Define los datos que se envían en el cuerpo de la petición. El formato es el mismo que el de un formulario HTML.
+    Esto nos devolverá la lista de pizzas que haya en la base de datos.
 
-### 2.3. Verificación Final
+2.  **Probar `POST` (Crear una Pizza):**
+    Primero, necesitamos saber los IDs de algunos toppings. Podemos usar el shell de Django (`docker-compose exec servidor python manage.py shell`) para crearlos si no existen.
+    Luego, lanzamos la petición:
+    ```bash
+    curl -X POST -d "nombre=Barbacoa&precio=12.50&toppings=1&toppings=3" http://localhost:8000/pizzas/
+    ```
+    Si todo va bien, recibiremos un JSON confirmando la creación.
 
-Si la petición anterior tuvo éxito, ¡ahora puedes volver a comprobar la lista de pizzas!
-```bash
-curl http://localhost:8000/pizzas/
-```
-**Resultado esperado:** Ahora la lista ya no estará vacía. Deberías ver tu pizza Margarita recién creada.
-```json
-{"pizzas": [{"id": 1, "nombre": "Margarita", "precio": "9.99", "estado": "Disponible"}]}
-```
-¡Felicidades! Has completado el ciclo de Creación y Lectura (CR de CRUD) para una API.
+---
+
+## 2. Ejercicio Práctico: Creación de la API de Toppings
+
+Ahora es vuestro turno. Aplicando lo que hemos analizado, vuestra tarea es construir un endpoint completo en `/toppings/`.
+
+**Vuestro objetivo:** Crear una vista `toppings_view` que, al igual que `pizzas_view`, sea capaz de gestionar peticiones `GET` y `POST`.
+
+### 2.1. Diseña y construye la vista
+
+Dentro de `app/views.py`, crea una nueva función `toppings_view`. Piensa en las siguientes preguntas:
+
+*   ¿Qué decorador necesitarás si quieres que tu vista acepte peticiones `POST` desde `cURL`?
+*   **Para la lógica `GET`:**
+    *   ¿Qué comando del ORM usarías para obtener todos los toppings?
+    *   ¿Cómo serializarías la lista de toppings a un formato JSON? ¿Qué campos del modelo `Topping` te gustaría mostrar?
+*   **Para la lógica `POST`:**
+    *   ¿Cómo accederías al `nombre` y `es_vegetariano` enviados en la petición?
+    *   El valor de `es_vegetariano` llegará como un string (`'True'` o `'False'`). ¿Cómo lo convertirías a un booleano de Python (`True` o `False`) antes de crear el objeto?
+    *   ¿Qué método del ORM usarías para crear el nuevo `Topping` en la base de datos?
+
+### 2.2. Conecta la URL
+
+En `app/urls.py`, añade una nueva ruta para que la URL `/toppings/` apunte a la vista que acabas de crear.
+
+### 2.3. ¡Pruébalo!
+
+Escribe y ejecuta tus propios comandos de `cURL` para:
+1.  Crear un nuevo topping (ej: Champiñones) usando el método `POST`.
+2.  Verificar que el nuevo topping aparece en la lista al hacer una petición `GET`.
+
+¡Buena suerte!
