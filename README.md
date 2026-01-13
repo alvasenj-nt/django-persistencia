@@ -14,6 +14,48 @@ La estructura del proyecto sigue las mejores prácticas de la comunidad de Djang
 
 ---
 
+## Guía de Instalación para el Entorno Local
+
+### Docker Desktop en Windows (con WSL2)
+
+Docker nos permite empaquetar la aplicación y sus dependencias en "contenedores". Esto garantiza que el entorno de desarrollo sea idéntico para todos los miembros del equipo, eliminando el clásico problema de "en mi máquina sí funciona".
+
+Esta guía asume que ya tienes WSL2 (Subsistema de Windows para Linux) instalado y configurado en tu máquina.
+
+1.  **Desinstalar Versiones Anteriores:**
+    *   Ve a "Agregar o quitar programas" en la configuración de Windows.
+    *   Busca "Docker Desktop" en la lista de aplicaciones y selecciónalo.
+    *   Haz clic en "Desinstalar". **Necesitarás proporcionar una contraseña de administrador** para confirmar la acción.
+
+2.  **Instalar Docker Desktop:**
+    *   Descarga el instalador oficial desde la página de Docker: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+    *   Ejecuta el archivo descargado. La instalación también **requerirá permisos de administrador**.
+    *   Sigue las instrucciones del asistente de instalación, asegurándote de que la opción para usar WSL2 esté seleccionada.
+
+### Instalación de Git y Clonación del Proyecto
+
+Git es un sistema de control de versiones que nos permite guardar un historial de los cambios en nuestro código. Es una herramienta esencial para colaborar en equipo, gestionar diferentes versiones del proyecto y poder volver a un estado anterior si algo sale mal.
+
+1.  **Instalar Git:**
+    *   Descarga Git para Windows desde el sitio web oficial: [https://git-scm.com/downloads](https://git-scm.com/downloads)
+    *   Ejecuta el instalador. Generalmente, puedes aceptar las opciones por defecto durante la instalación.
+
+2.  **Clonar el Repositorio:**
+    *   Abre una terminal (como Git Bash, que se instala con Git, o la Terminal de Windows).
+    *   Navega al directorio donde quieras guardar el proyecto.
+    *   Ejecuta el siguiente comando para clonar el repositorio:
+        ```bash
+        git clone https://github.com/dvarrui/django-persistencia.git
+        ```
+
+---
+
+## ¿Qué es Django?
+
+Django es un framework de desarrollo web de alto nivel, escrito en Python, que promueve un desarrollo rápido y un diseño limpio y pragmático. Su filosofía es "baterías incluidas", lo que significa que viene con casi todo lo que un desarrollador podría necesitar para construir una aplicación web completa, como un ORM (Mapeador Objeto-Relacional) para interactuar con la base de datos, un panel de administración automático, un sistema de autenticación de usuarios y mucho más. Su arquitectura principal se basa en el patrón MVT (Modelo-Vista-Plantilla).
+
+---
+
 ## Creación del Proyecto (Desde Cero)
 
 Para entender cómo se ha construido esta estructura, aquí están los comandos fundamentales que se ejecutaron.
