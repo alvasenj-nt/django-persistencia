@@ -40,6 +40,7 @@ El primer paso es crear tu propia copia de este proyecto para poder trabajar de 
 1.  **Crear tu repositorio desde esta plantilla:**
     -   En la parte superior de la página de GitHub, haz clic en el botón verde **"Use this template"**.
     -   Selecciona **"Create a new repository"**.
+    -   **¡Importante!** Asegúrate de marcar la casilla **"Include all branches"** para copiar todas las ramas del proyecto (como `iniciacion`).
     -   Dale un nombre a tu nuevo repositorio y haz clic en **"Create repository"**. ¡Ya tienes tu propia copia!
 
 2.  **Clonar tu nuevo repositorio:**
