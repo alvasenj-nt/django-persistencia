@@ -1,17 +1,14 @@
 services:
   servidor:
     build: .
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    entrypoint: /app/docker-entrypoint.sh
+    command: ["--migrate", "--create-superuser", "--runserver"]
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      - DB_HOST=db
-      - DB_NAME=db_curso
-      - DB_USER=user_curso
-      - DB_PASSWORD=pass_curso
-      - DB_PORT=3306
+    env_file:
+      - _env/devel.env
     depends_on:
       db:
         condition: service_healthy
