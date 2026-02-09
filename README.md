@@ -4,128 +4,50 @@
 
 Este proyecto está diseñado para **fines educativos**. Su objetivo es servir como una base robusta y bien estructurada para aprender a desarrollar aplicaciones web con Django, poniendo especial énfasis en la persistencia de datos con una base de datos real (MySQL) y el uso de Docker para crear un entorno de desarrollo consistente.
 
-La estructura del proyecto sigue las mejores prácticas de la comunidad de Django, separando claramente la configuración del proyecto de la lógica de las aplicaciones.
+La estructura del proyecto sigue las mejores prácticas de la comunidad de Django, incorporando herramientas modernas como `Docker`, `Ruff` y `Makefile` para crear un entorno de desarrollo profesional y fácil de usar.
 
 ## Características
 
 - Framework: Django 4.2.27
 - Base de datos: MySQL 8.0
-- Entorno de desarrollo: Contenedorizado con Docker y Docker Compose
+- Entorno de desarrollo: Contenerizado con Docker y Docker Compose
+- Calidad de código: Linter `Ruff` preconfigurado.
+- Automatización: `Makefile` con comandos para las operaciones más comunes.
 
 ---
 
-## Guía de Instalación para el Entorno Local
+## Guía de Inicio Rápido
 
-### Docker Desktop en Windows (con WSL2)
+Este proyecto está diseñado para funcionar con Docker. Asegúrate de tenerlo instalado.
 
-Docker nos permite empaquetar la aplicación y sus dependencias en "contenedores". Esto garantiza que el entorno de desarrollo sea idéntico para todos los miembros del equipo, eliminando el clásico problema de "en mi máquina sí funciona".
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/dvarrui/django-persistencia.git
+    cd django-persistencia
+    ```
 
-Esta guía asume que ya tienes WSL2 (Subsistema de Windows para Linux) instalado y configurado en tu máquina.
+2.  **Arrancar los servicios:**
+    Este único comando construirá las imágenes, descargará las dependencias y arrancará el servidor de Django y la base de datos.
+    ```bash
+    make up
+    ```
 
-1.  **Desinstalar Versiones Anteriores:**
-    *   Ve a "Agregar o quitar programas" en la configuración de Windows.
-    *   Busca "Docker Desktop" en la lista de aplicaciones y selecciónalo.
-    *   Haz clic en "Desinstalar". **Necesitarás proporcionar una contraseña de administrador** para confirmar la acción.
+3.  **Acceder a la aplicación:**
+    - Abre tu navegador en [http://localhost:8000](http://localhost:8000)
+    - Accede al panel de administración en [http://localhost:8000/admin](http://localhost:8000/admin) (las credenciales por defecto son `admin`/`admin`).
 
-2.  **Instalar Docker Desktop:**
-    *   Descarga el instalador oficial desde la página de Docker: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-    *   Ejecuta el archivo descargado. La instalación también **requerirá permisos de administrador**.
-    *   Sigue las instrucciones del asistente de instalación, asegurándote de que la opción para usar WSL2 esté seleccionada.
-
-### Instalación de Git y Clonación del Proyecto
-
-Git es un sistema de control de versiones que nos permite guardar un historial de los cambios en nuestro código. Es una herramienta esencial para colaborar en equipo, gestionar diferentes versiones del proyecto y poder volver a un estado anterior si algo sale mal.
-
-1.  **Instalar Git:**
-    *   Descarga Git para Windows desde el sitio web oficial: [https://git-scm.com/downloads](https://git-scm.com/downloads)
-    *   Ejecuta el instalador. Generalmente, puedes aceptar las opciones por defecto durante la instalación.
-
-2.  **Clonar el Repositorio:**
-    *   Abre una terminal (como Git Bash, que se instala con Git, o la Terminal de Windows).
-    *   Navega al directorio donde quieras guardar el proyecto.
-    *   Ejecuta el siguiente comando para clonar el repositorio:
-        ```bash
-        git clone https://github.com/dvarrui/django-persistencia.git
-        ```
+> **Nota:** Para una guía detallada sobre la instalación, los conceptos de Django y Docker, y la configuración avanzada de este proyecto, consulta el fichero [clase_1_iniciacion.md](clase_1_iniciacion.md).
 
 ---
 
-## ¿Qué es Django?
+## Comandos de Makefile Disponibles
 
-Django es un framework de desarrollo web de alto nivel, escrito en Python, que promueve un desarrollo rápido y un diseño limpio y pragmático. Su filosofía es "baterías incluidas", lo que significa que viene con casi todo lo que un desarrollador podría necesitar para construir una aplicación web completa, como un ORM (Mapeador Objeto-Relacional) para interactuar con la base de datos, un panel de administración automático, un sistema de autenticación de usuarios y mucho más. Su arquitectura principal se basa en el patrón MVT (Modelo-Vista-Plantilla).
+El `Makefile` incluido simplifica la gestión del ciclo de vida del proyecto.
 
----
-
-## Creación del Proyecto (Desde Cero)
-
-Para entender cómo se ha construido esta estructura, aquí están los comandos fundamentales que se ejecutaron.
-
-1.  **Crear la estructura base del proyecto:**
-    El primer paso es usar el comando `django-admin` para crear el esqueleto del proyecto.
-
-    ```bash
-    # Este comando crea el directorio 'django_persistencia' con los ficheros de configuración.
-    django-admin startproject django_persistencia .
-    ```
-    *Nota: El `.` al final es importante. Le dice a Django que cree el proyecto en el directorio actual, evitando un nivel de anidamiento innecesario.*
-
-2.  **Crear la aplicación principal de trabajo:**
-    Un proyecto de Django se compone de una o más "apps". Las apps son módulos que encapsulan una funcionalidad específica.
-
-    ```bash
-    # Desde el directorio raíz, junto a manage.py
-    python manage.py startapp app
-    ```
-    *Este comando crea el directorio `app/` con su propia estructura de archivos (`models.py`, `views.py`, etc.), que es donde los estudiantes desarrollarán la lógica de la aplicación.*
-
----
-
-## Primer Uso del Proyecto
-
-### Opción Recomendada: Ejecución con Docker
-
-Este método es el más sencillo y fiable, ya que abstrae toda la configuración del entorno.
-
-1.  **Construir y ejecutar los contenedores:**
-    Este comando leerá el `docker-compose.yml`, construirá la imagen de Docker para el servidor de Django (si no existe) y arrancará los servicios de la aplicación y la base de datos.
-
-    ```bash
-    docker-compose up --build -d
-    ```
-
-2.  **Acceder a la aplicación:**
-    - Abrir el navegador en: http://localhost:8000
-    - El servidor se recargará automáticamente cada vez que se modifique un archivo del código.
-
-3.  **Para detener los servicios:**
-    - Presionar `Ctrl + C` en la terminal donde se ejecutó el `docker-compose`.
-    - Para eliminar los contenedores y el volumen de la base de datos: `docker-compose down -v`
-
-### Opción 2: Ejecución Local (Avanzado)
-
-Este método requiere tener Python y MySQL instalados y configurados en la máquina local.
-
-1.  **Crear y activar un entorno virtual:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # En Linux/Mac
-    # venv\Scripts\activate   # En Windows
-    ```
-
-2.  **Instalar dependencias:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Ejecutar las migraciones:**
-    Este comando crea las tablas en la base de datos basándose en los modelos definidos.
-    ```bash
-    python manage.py migrate
-    ```
-
-4.  **Iniciar el servidor de desarrollo:**
-    ```bash
-    python manage.py runserver
-    ```
-
----
+-   `make build`: Construye o reconstruye las imágenes de Docker.
+-   `make up`: Arranca todos los servicios en segundo plano.
+-   `make down`: Detiene y elimina los contenedores, redes y volúmenes.
+-   `make logs`: Muestra los logs de los servicios en tiempo real.
+-   `make shell`: Abre una terminal (`bash`) dentro del contenedor del servidor.
+-   `make lint`: Revisa la calidad del código con `Ruff` (se ejecuta localmente).
+-   `make lint-fix`: Intenta corregir automáticamente los errores de `linting`.
