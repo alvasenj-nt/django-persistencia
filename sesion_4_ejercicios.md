@@ -1,5 +1,7 @@
 # Sesión 4: Vistas de Detalle, Edición y Borrado (API)
 
+En esta sesión complementaremos la API creada en la sesión anterior, enfocándonos en la interacción con recursos individuales. Analizaremos cómo implementar vistas para obtener el detalle de un elemento, actualizarlo parcialmente o completamente, y eliminarlo, utilizando los métodos HTTP GET, PUT y DELETE.
+
 En la sesión anterior analizamos un endpoint que gestionaba una **colección** de recursos (`/pizzas/`). Hoy completaremos el ciclo CRUD (Create, Read, Update, Delete) estudiando cómo interactuar con un **recurso específico** a través de su ID, como ver, modificar o borrar una pizza concreta.
 
 **Objetivos de hoy:**
