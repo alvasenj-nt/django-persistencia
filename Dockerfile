@@ -19,18 +19,17 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos el script de entrypoint y el de espera de BD
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-COPY wait_for_db.py /app/wait_for_db.py
+# Copiamos los scripts a una ruta del sistema que no será sobreescrita por el volumen
+COPY docker-entrypoint.sh /usr/local/bin/
+COPY wait_for_db.py /usr/local/bin/
 
-# Se asegura de que los scripts tengan finales de línea de Unix (LF) y sean ejecutables,
-# usando pasos separados para máxima compatibilidad.
-RUN sed -i 's/\r$//g' /app/docker-entrypoint.sh
-RUN sed -i 's/\r$//g' /app/wait_for_db.py
-RUN chmod +x /app/docker-entrypoint.sh
+# Se asegura de que los scripts tengan finales de línea de Unix (LF) y sean ejecutables.
+RUN sed -i 's/\r$//g' /usr/local/bin/docker-entrypoint.sh && \
+    sed -i 's/\r$//g' /usr/local/bin/wait_for_db.py && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Definimos el entrypoint y el comando por defecto
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["--migrate", "--create-superuser", "--runserver"]
 
 # El código no lo copiamos aquí, lo montaremos con docker-compose para poder editar en vivo
