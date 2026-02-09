@@ -35,14 +35,22 @@ Docker es la plataforma que nos permitirá ejecutar el proyecto dentro de conten
 
 ## 2. Guía de Inicio Rápido
 
-1.  **Clonar el repositorio:**
+El primer paso es crear tu propia copia de este proyecto para poder trabajar de forma independiente.
+
+1.  **Crear tu repositorio desde esta plantilla:**
+    -   En la parte superior de la página de GitHub, haz clic en el botón verde **"Use this template"**.
+    -   Selecciona **"Create a new repository"**.
+    -   Dale un nombre a tu nuevo repositorio y haz clic en **"Create repository"**. ¡Ya tienes tu propia copia!
+
+2.  **Clonar tu nuevo repositorio:**
+    Ahora, descarga el código de **tu repositorio** a tu ordenador. Reemplaza `<TU_USUARIO_DE_GITHUB>` por tu nombre de usuario.
     ```bash
-    git clone https://github.com/alvasenj-nt/django-persistencia.git
-    cd django-persistencia
+    git clone https://github.com/<TU_USUARIO_DE_GITHUB>/<NOMBRE_DE_TU_NUEVO_REPO>.git
+    cd <NOMBRE_DE_TU_NUEVO_REPO>
     ```
 
-2.  **Arrancar los servicios:**
-    Este único comando construirá las imágenes la primera vez y arrancará el servidor de Django y la base de datos. Recuerda que docker desktop debe estar arrancado y el servicio corriendo.
+3.  **Arrancar los servicios:**
+    Este único comando construirá las imágenes la primera vez y arrancará el servidor de Django y la base de datos. Recuerda que Docker Desktop debe estar arrancado y el servicio corriendo.
 
     -   **En macOS o Linux:**
         ```bash
@@ -53,7 +61,7 @@ Docker es la plataforma que nos permitirá ejecutar el proyecto dentro de conten
         ./make.bat up
         ```
 
-3.  **Acceder a la aplicación:**
+4.  **Acceder a la aplicación:**
     -   Abre tu navegador en [http://localhost:8000](http://localhost:8000)
     -   Accede al panel de administración en [http://localhost:8000/admin](http://localhost:8000/admin) (las credenciales por defecto son `admin`/`admin`).
 
