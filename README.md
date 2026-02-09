@@ -42,7 +42,7 @@ Docker es la plataforma que nos permitirá ejecutar el proyecto dentro de conten
     ```
 
 2.  **Arrancar los servicios:**
-    Este único comando construirá las imágenes la primera vez y arrancará el servidor de Django y la base de datos.
+    Este único comando construirá las imágenes la primera vez y arrancará el servidor de Django y la base de datos. Recuerda que docker desktop debe estar arrancado y el servicio corriendo.
 
     -   **En macOS o Linux:**
         ```bash
