@@ -5,6 +5,10 @@ set -e
 export DB_HOST=${DB_HOST:-db}
 export DB_PORT=${DB_PORT:-3306}
 
+echo "Waiting for database..."
+python wait_for_db.py
+echo "Database is available."
+
 # Process commands
 while test $# -gt 0
 do
