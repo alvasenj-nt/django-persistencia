@@ -1,7 +1,6 @@
 services:
   servidor:
     build: .
-    entrypoint: /app/docker-entrypoint.sh
     command: ["--migrate", "--create-superuser", "--runserver"]
     volumes:
       - .:/app
