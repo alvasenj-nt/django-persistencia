@@ -23,11 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY wait_for_db.py /app/wait_for_db.py
 
-# Se asegura de que los scripts tengan finales de línea de Unix (LF) y sean ejecutables.
-# Esto es crucial para evitar errores cuando los ficheros se editan en Windows (CRLF).
-RUN sed -i 's/\r//g' /app/docker-entrypoint.sh && \
-    sed -i 's/\r//g' /app/wait_for_db.py && \
-    chmod +x /app/docker-entrypoint.sh
+# Se asegura de que los scripts tengan finales de línea de Unix (LF) y sean ejecutables,
+# usando pasos separados para máxima compatibilidad.
+RUN sed -i 's/\r$//g' /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//g' /app/wait_for_db.py
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Definimos el entrypoint y el comando por defecto
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
