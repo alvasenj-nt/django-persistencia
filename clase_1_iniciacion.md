@@ -1,22 +1,6 @@
 # Guía de Inicio y Fundamentos: Django con Docker
 
-## 1. Descripción del Proyecto
-
-Este proyecto está diseñado para **fines educativos**. Su objetivo es servir como una base robusta y bien estructurada para aprender a desarrollar aplicaciones web con Django, poniendo especial énfasis en la persistencia de datos con una base de datos real (MySQL) y el uso de Docker para crear un entorno de desarrollo consistente.
-
-La estructura del proyecto sigue las mejores prácticas de la comunidad de Django, incorporando herramientas modernas como `Docker`, `Ruff` y `Makefile` para crear un entorno de desarrollo profesional y fácil de usar.
-
-### Características Principales
-
--   **Framework:** Django 4.2.27
--   **Base de datos:** MySQL 8.0
--   **Entorno de desarrollo:** Contenerizado con Docker y Docker Compose
--   **Calidad de código:** Linter `Ruff` preconfigurado.
--   **Automatización:** `Makefile` con atajos para las operaciones más comunes.
-
----
-
-## 2. Conceptos Clave: Web, Django y Docker
+## 1. Conceptos Clave: Web, Django y Docker
 
 ### A. El Servidor Web: La Pizzería de Internet
 
@@ -43,53 +27,7 @@ Esto resuelve para siempre el problema de "¡en mi ordenador sí funciona!", ya 
 
 ---
 
-## 3. Guía de Instalación y Primer Uso
-
-### A. Requisitos e Instalación
-
-1.  **Instalar Git:** Necesario para descargar el proyecto. Puedes descargarlo desde [git-scm.com](https://git-scm.com/downloads).
-2.  **Instalar Docker Desktop:** Es la herramienta que ejecutará nuestro entorno.
-    -   Descárgala desde [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
-    -   La instalación requiere permisos de administrador. En Windows, asegúrate de que la opción para usar WSL2 esté seleccionada.
-3.  **Clonar el Repositorio:**
-    ```bash
-    git clone https://github.com/dvarrui/django-persistencia.git
-    cd django-persistencia
-    ```
-
-### B. Uso del Proyecto con Makefile
-
-Hemos creado un `Makefile` que simplifica enormemente el uso de Docker.
-
-#### Arranque del Proyecto
-Este es el único comando que necesitas para poner todo en marcha:
-```bash
-make up
-```
-Este comando construirá las imágenes, instalará dependencias, iniciará los contenedores y preparará la base de datos.
-
-#### Acceder a la Aplicación
--   **Aplicación web:** [http://localhost:8000](http://localhost:8000)
--   **Panel de Administración:** [http://localhost:8000/admin](http://localhost:8000/admin) (Credenciales en `_env/devel.env`)
-
-#### Parar el Proyecto
-Para detener todos los contenedores y **eliminar los datos de la base de datos**:
-```bash
-make down
-```
-
-### C. Comandos del Makefile Disponibles
--   `make build`: Construye las imágenes de Docker.
--   `make up`: Arranca los servicios.
--   `make down`: Detiene y elimina los contenedores y datos.
--   `make logs`: Muestra los logs en tiempo real.
--   `make shell`: Abre una terminal dentro del contenedor del servidor.
--   `make lint`: Revisa la calidad del código con `Ruff`.
--   `make lint-fix`: Intenta corregir errores de código automáticamente.
-
----
-
-## 4. Anatomía del Proyecto
+## 2. Anatomía del Proyecto
 
 ### A. Creación del Proyecto (Desde Cero)
 
