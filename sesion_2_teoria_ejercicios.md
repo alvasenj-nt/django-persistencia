@@ -66,17 +66,36 @@ Estos ficheros son la clave para que cualquier miembro del equipo pueda reconstr
 
 ## 3. La "Magia": ¿Cómo se Construye la Base de Datos?
 
-Cuando un nuevo desarrollador clona este repositorio y ejecuta `docker-compose up`, ocurre algo fundamental, definido en el fichero `docker-compose.yml`:
-```yaml
-command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-```
-El comando `python manage.py migrate` se ejecuta **automáticamente** cada vez que arranca el servidor. ¿Qué hace `migrate`?
+Cuando un nuevo desarrollador clona este repositorio y ejecuta `make up` o bien en Windows `./make.bat up`, ocurren varias cosas en cadena para preparar la base de datos automáticamente. La magia está orquestada entre `docker-compose.yml` y nuestro script `docker-entrypoint.sh`.
 
-1.  Se conecta a la base de datos.
-2.  Comprueba una tabla especial (`django_migrations`) para ver qué migraciones de los ficheros se han aplicado ya.
-3.  Si encuentra ficheros de migración en `app/migrations/` que no están en esa tabla, los ejecuta en orden.
+1.  **El `docker-compose.yml` da la orden:**
+    En `docker-compose.yml` verás que el servicio `servidor` tiene una directiva `command`:
+    ```yaml
+    command: ["--migrate", "--create-superuser", "--runserver"]
+    ```
+    Estas son las "tareas" que queremos que se ejecuten al arrancar. El `Dockerfile`, a su vez, define que el `ENTRYPOINT` (el ejecutable principal) de la imagen es nuestro script `docker-entrypoint.sh`.
 
-Para un desarrollador nuevo, ninguna migración estará aplicada. Por tanto, Django ejecutará `0001_initial.py` (creando las tablas) y luego `0002_alter_pizza_precio.py` (modificando el campo precio).
+2.  **El `docker-entrypoint.sh` ejecuta las tareas:**
+    Este script recibe los comandos y los procesa en orden.
+    -   Primero, ejecuta `python wait_for_db.py` para asegurarse de que la base de datos está totalmente lista para aceptar conexiones.
+    -   Luego, procesa el comando `--migrate`:
+        ```bash
+        # Dentro de docker-entrypoint.sh
+        case "$1" in
+            --migrate)
+                echo "Applying database migrations..."
+                python manage.py migrate
+                ;;
+            # ... otros casos ...
+        esac
+        ```
+    Aquí es donde se ejecuta **automáticamente** el comando `python manage.py migrate`.
+
+3.  **Django `migrate` hace su trabajo:**
+    Una vez invocado, `migrate` hace lo de siempre:
+    -   Se conecta a la base de datos.
+    -   Comprueba una tabla especial (`django_migrations`) para ver qué migraciones ya se han aplicado.
+    -   Si encuentra ficheros de migración en `app/migrations/` que no están en esa tabla, los ejecuta en orden.
 
 **El resultado final es que, con solo levantar los contenedores, la base de datos queda perfectamente sincronizada con el estado actual de los modelos, incluyendo toda su historia de cambios.**
 
