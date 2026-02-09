@@ -22,12 +22,15 @@ Este proyecto está diseñado para funcionar con Docker. Asegúrate de tenerlo i
 
 1.  **Clonar el repositorio:**
     ```bash
-    git clone https://github.com/dvarrui/django-persistencia.git
+    git clone https://github.com/alvasenj-nt/django-persistencia.git
     cd django-persistencia
     ```
 
 2.  **Arrancar los servicios:**
     Este único comando construirá las imágenes, descargará las dependencias y arrancará el servidor de Django y la base de datos.
+    ```bash
+    make build
+    ```
     ```bash
     make up
     ```
@@ -36,18 +39,4 @@ Este proyecto está diseñado para funcionar con Docker. Asegúrate de tenerlo i
     - Abre tu navegador en [http://localhost:8000](http://localhost:8000)
     - Accede al panel de administración en [http://localhost:8000/admin](http://localhost:8000/admin) (las credenciales por defecto son `admin`/`admin`).
 
-> **Nota:** Para una guía detallada sobre la instalación, los conceptos de Django y Docker, y la configuración avanzada de este proyecto, consulta el fichero [clase_1_iniciacion.md](clase_1_iniciacion.md).
-
 ---
-
-## Comandos de Makefile Disponibles
-
-El `Makefile` incluido simplifica la gestión del ciclo de vida del proyecto.
-
--   `make build`: Construye o reconstruye las imágenes de Docker.
--   `make up`: Arranca todos los servicios en segundo plano.
--   `make down`: Detiene y elimina los contenedores, redes y volúmenes.
--   `make logs`: Muestra los logs de los servicios en tiempo real.
--   `make shell`: Abre una terminal (`bash`) dentro del contenedor del servidor.
--   `make lint`: Revisa la calidad del código con `Ruff` (se ejecuta localmente).
--   `make lint-fix`: Intenta corregir automáticamente los errores de `linting`.
