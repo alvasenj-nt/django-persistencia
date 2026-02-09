@@ -50,7 +50,7 @@ Docker es la plataforma que nos permitirá ejecutar el proyecto dentro de conten
         ```
     -   **En Windows:**
         ```bash
-        make.bat up
+        ./make.bat up
         ```
 
 3.  **Acceder a la aplicación:**
