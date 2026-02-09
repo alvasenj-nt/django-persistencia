@@ -103,7 +103,7 @@ Este método es el más sencillo y fiable, ya que abstrae toda la configuración
 
 ### Opción 2: Ejecución Local (Avanzado)
 
-Este método requiere tener Python y MySQL instalados y configurados en la máquina local.
+Este método requiere tener Python y MySQL instalados y configurados en la máquina local. Es útil para ejecutar herramientas como el linter localmente.
 
 1.  **Crear y activar un entorno virtual:**
     ```bash
@@ -113,6 +113,7 @@ Este método requiere tener Python y MySQL instalados y configurados en la máqu
     ```
 
 2.  **Instalar dependencias:**
+    Esto instalará Django y también `ruff`, la herramienta que usamos para el linting.
     ```bash
     pip install -r requirements.txt
     ```
@@ -127,5 +128,55 @@ Este método requiere tener Python y MySQL instalados y configurados en la máqu
     ```bash
     python manage.py runserver
     ```
+
+---
+### Entendiendo la Configuración Avanzada con Docker
+
+El `docker-compose.yml` de este proyecto utiliza una configuración avanzada para automatizar el entorno de desarrollo. Aunque puede parecer complejo al principio, está diseñado para seguir las mejores prácticas y hacerte la vida más fácil.
+
+Aquí te explicamos los componentes clave:
+
+#### 1. Fichero de Entorno: `_env/devel.env`
+
+En lugar de escribir "secrets" (como contraseñas o claves secretas) directamente en los ficheros de configuración, usamos un fichero de entorno.
+
+-   **Ubicación:** `_env/devel.env`
+-   **Propósito:** Centraliza toda la configuración que puede cambiar entre entornos (desarrollo, producción, etc.). Aquí defines el usuario y la contraseña de la base de datos, la `SECRET_KEY` de Django y las credenciales del superusuario que se crea al inicio.
+-   **Ventaja:** Separa la configuración del código, una práctica de seguridad y organización fundamental en el desarrollo de software.
+
+#### 2. El Script de Arranque: `docker-entrypoint.sh`
+
+Este script es el "cerebro" que se ejecuta cada vez que se inicia el contenedor del servidor.
+
+-   **Propósito:** Automatiza las tareas de inicialización necesarias para que la aplicación Django funcione correctamente.
+-   **¿Qué hace?:**
+    1.  **`--migrate`**: Ejecuta `python manage.py migrate` para asegurarse de que la base de datos tiene las tablas más recientes.
+    2.  **`--create-superuser`**: Crea un superusuario en Django usando las variables de entorno `DJANGO_SUPERUSER_USERNAME` y `DJANGO_SUPERUSER_PASSWORD` definidas en `_env/devel.env`. Si el usuario ya existe, simplemente continúa.
+    3.  **`--runserver`**: Inicia el servidor de desarrollo de Django, que es lo que finalmente te permite ver la aplicación en tu navegador.
+
+#### 3. Orquestación: `docker-compose.yml`
+
+Este fichero es el director de orquesta. Define los servicios (`servidor`, `db`) y cómo se conectan y configuran.
+
+-   **`env_file`**: Le dice al servicio `servidor` que cargue toda su configuración desde `_env/devel.env`.
+-   **`entrypoint` y `command`**: Le indica al `servidor` que use nuestro script `docker-entrypoint.sh` y le pasa los comandos a ejecutar (`--migrate`, `--create-superuser`, `--runserver`).
+-   **`depends_on: condition: service_healthy`**: Es una regla crucial. Le dice al `servidor` que **no intente arrancar hasta que el servicio `db` (la base de datos) esté completamente listo**. Esto evita los típicos errores de "no se puede conectar a la base de datos" durante el arranque.
+
+---
+## Automatización con Makefile
+
+Para simplificar aún más los comandos de Docker, este proyecto incluye un `Makefile`. La herramienta `make` permite definir "recetas" o "comandos" para automatizar tareas comunes.
+
+Esto te permite ejecutar operaciones complejas con un comando muy simple desde tu terminal.
+
+### Comandos Disponibles
+
+-   `make build`: Construye o reconstruye las imágenes de Docker para los servicios. Útil después de cambiar `requirements.txt` o el `Dockerfile`.
+-   `make up`: Arranca todos los servicios en segundo plano (`-d` de "detached"). Es el comando que usarás habitualmente para iniciar el entorno.
+-   `make down`: Detiene y elimina los contenedores y redes. Añadimos la opción `-v` para borrar también los volúmenes de la base de datos (¡cuidado, esto borra los datos!).
+-   `make logs`: Muestra los logs de todos los servicios en tiempo real. Esencial para ver qué está pasando o para depurar errores.
+-   `make shell`: Abre una terminal (`bash`) dentro del contenedor del `servidor`. Esto es extremadamente útil para ejecutar comandos de Django manualmente, como `python manage.py shell`, `python manage.py dbshell`, etc.
+-   `make lint`: Ejecuta el linter `ruff` para revisar la calidad del código y el cumplimiento de los estándares de estilo de Python. Se ejecuta localmente (no en Docker) y necesita que instales las dependencias con `pip install -r requirements.txt`.
+-   `make lint-fix`: Igual que `make lint`, pero además intenta corregir automáticamente todos los errores que sea posible.
 
 ---
