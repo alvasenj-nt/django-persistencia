@@ -38,7 +38,7 @@ Para entender la estructura, es útil saber que el esqueleto del proyecto se cre
 
 ### B. Estructura de Ficheros Clave
 
--   **`Makefile`**: Contiene los atajos (`make up`, `make lint`, etc.) para gestionar el proyecto.
+-   **`Makefile` / `make.bat`**: Contiene los atajos (`make up`, `make lint`, etc.) para gestionar el proyecto. Se usa `make` en Linux/Mac y `./make.bat` en Windows.
 -   **`requirements.txt`**: La lista de librerías de Python que necesita el proyecto.
 -   **`docker-compose.yml`**: El "director de orquesta" que define los servicios (servidor y base de datos) y cómo se comunican.
 -   **`docker-entrypoint.sh`**: Script que se ejecuta al iniciar el contenedor para preparar el entorno (migraciones, etc.).
@@ -50,12 +50,3 @@ Para entender la estructura, es útil saber que el esqueleto del proyecto se cre
     -   `models.py`: ¡El fichero clave para la persistencia! Defines tus datos con clases de Python.
     -   `views.py`: La sala de máquinas, donde vive la lógica de tu aplicación.
     -   `admin.py`: Permite que tus modelos aparezcan en el panel de administración.
-
-### C. Ejecución Local (Sin Docker - Avanzado)
-
-Si prefieres no usar Docker, puedes configurar un entorno local. Necesitarás tener Python y MySQL instalados.
-
-1.  **Crear y activar un entorno virtual:** `python -m venv venv` y luego `source venv/bin/activate`.
-2.  **Instalar dependencias:** `pip install -r requirements.txt`.
-3.  **Configurar variables de entorno:** Deberás crear un fichero `.env` para que Django conecte con tu BD local.
-4.  **Ejecutar migraciones y arrancar el servidor:** `python manage.py migrate` y `python manage.py runserver`.
