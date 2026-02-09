@@ -66,7 +66,7 @@ Estos ficheros son la clave para que cualquier miembro del equipo pueda reconstr
 
 ## 3. La "Magia": ¿Cómo se Construye la Base de Datos?
 
-Cuando un nuevo desarrollador clona este repositorio y ejecuta `make up` o bien en Windows `./make.bat`, ocurren varias cosas en cadena para preparar la base de datos automáticamente. La magia está orquestada entre `docker-compose.yml` y nuestro script `docker-entrypoint.sh`.
+Cuando un nuevo desarrollador clona este repositorio y ejecuta `make up` o bien en Windows `./make.bat up`, ocurren varias cosas en cadena para preparar la base de datos automáticamente. La magia está orquestada entre `docker-compose.yml` y nuestro script `docker-entrypoint.sh`.
 
 1.  **El `docker-compose.yml` da la orden:**
     En `docker-compose.yml` verás que el servicio `servidor` tiene una directiva `command`:
